@@ -2,22 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../widgets/common_app_bar.dart';
-
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized(); // 플러그인 초기화
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: EconomicStudy(),
-    );
-  }
-}
+import '../widgets/tab_bar_list.dart';
 
 class EconomicStudy extends StatefulWidget {
   const EconomicStudy({super.key});
@@ -26,15 +11,54 @@ class EconomicStudy extends StatefulWidget {
   _EconomicStudy createState() => _EconomicStudy();
 }
 
-class _EconomicStudy extends State<EconomicStudy> {
+class _EconomicStudy extends State<EconomicStudy>
+    with SingleTickerProviderStateMixin {
   List<dynamic>? _economicWords;
-  final int _currentId = 1;
+  int _currentId = 1;
+  late TabController _tabController;
+  Map<String, dynamic>? currentItem;
 
   @override
   void initState() {
     super.initState();
     _loadEconomicWords();
-    // _loadCurrentId();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(_handleTabSelection);
+  }
+
+  @override
+  void dispose() {
+    _tabController.removeListener(_handleTabSelection);
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  void _handleTabSelection() {
+    if (!_tabController.indexIsChanging) {
+      return;
+    }
+
+    if (_tabController.index == 0) {
+      beforeNews();
+    } else if (_tabController.index == 1) {
+      nextNews();
+    }
+  }
+
+  void nextNews() {
+    setState(() {
+      _currentId = (_currentId % (_economicWords!.length)) + 1;
+      currentItem =
+          _economicWords!.firstWhere((item) => item['id'] == _currentId);
+    });
+  }
+
+  void beforeNews() {
+    setState(() {
+      _currentId = (_currentId == 1) ? _economicWords!.length : _currentId - 1;
+      currentItem =
+          _economicWords!.firstWhere((item) => item['id'] == _currentId);
+    });
   }
 
   Future<void> _loadEconomicWords() async {
@@ -46,21 +70,6 @@ class _EconomicStudy extends State<EconomicStudy> {
     });
   }
 
-  // Future<void> _loadCurrentId() async {
-  //   final prefs = await SharedPreferences.getInstance();
-  //   setState(() {
-  //     _currentId = (prefs.getInt('currentId') ?? 1);
-  //   });
-  // }
-
-  // Future<void> _updateCurrentId() async {
-  //   final prefs = await SharedPreferences.getInstance();
-  //   setState(() {
-  //     _currentId = (_currentId % (_economicWords?.length ?? 1)) + 1;
-  //     prefs.setInt('currentId', _currentId);
-  //   });
-  // }
-
   @override
   Widget build(BuildContext context) {
     if (_economicWords == null) {
@@ -69,7 +78,10 @@ class _EconomicStudy extends State<EconomicStudy> {
         appBar: AppBar(
           title: titleName('Economic Study'),
           backgroundColor: const Color.fromARGB(255, 150, 207, 254),
-          actions: const <Widget>[],
+          bottom: TabBar(
+            controller: _tabController,
+            tabs: tabEcoStudyUpDownList,
+          ),
         ),
         body: const Center(
           child: CircularProgressIndicator(),
@@ -77,23 +89,59 @@ class _EconomicStudy extends State<EconomicStudy> {
       );
     }
 
-    final currentItem =
+    currentItem =
         _economicWords!.firstWhere((item) => item['id'] == _currentId);
 
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: titleName('Economic Study'),
-        backgroundColor: const Color.fromARGB(255, 150, 207, 254),
-        actions: const <Widget>[
-          // IconButton(
-          //   icon: const Icon(Icons.refresh),
-          //   onPressed: _updateCurrentId,
-          // ),
+          title: titleName('Economic Study'),
+          backgroundColor: const Color.fromARGB(255, 150, 207, 254),
+          bottom: TabBar(
+            controller: _tabController,
+            tabs: const [
+              Tab(icon: Icon(Icons.arrow_back), text: 'Previous'),
+              Tab(icon: Icon(Icons.arrow_forward), text: 'Next'),
+            ],
+          )),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          GestureDetector(
+            onHorizontalDragEnd: (details) {
+              if (details.primaryVelocity! > 0) {
+                beforeNews();
+              } else if (details.primaryVelocity! < 0) {
+                nextNews();
+              }
+            },
+            onTap: () {
+              beforeNews();
+            },
+            child: _buildContent(currentItem),
+          ),
+          GestureDetector(
+            onHorizontalDragEnd: (details) {
+              if (details.primaryVelocity! > 0) {
+                beforeNews();
+              } else if (details.primaryVelocity! < 0) {
+                nextNews();
+              }
+            },
+            onTap: () {
+              nextNews();
+            },
+            child: _buildContent(currentItem),
+          ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(8.0),
+    );
+  }
+
+  Padding _buildContent(currentItem) {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

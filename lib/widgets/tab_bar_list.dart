@@ -16,3 +16,16 @@ List<Widget> get tabBarList {
     ),
   ];
 }
+
+List<Widget> get tabEcoStudyUpDownList {
+  return const [
+    Tab(
+      icon: Icon(Icons.arrow_left_rounded),
+      text: "before-content",
+    ),
+    Tab(
+      icon: Icon(Icons.arrow_right_rounded),
+      text: "after-content",
+    ),
+  ];
+}

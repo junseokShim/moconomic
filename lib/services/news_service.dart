@@ -14,7 +14,7 @@ class NewsService {
 
     // // phone build 192.168.219.100
     final response =
-        await http.get(Uri.parse('http://192.168.219.100:8000/news'));
+        await http.get(Uri.parse('http://14.43.161.199:8000/news'));
 
     if (response.statusCode == 200) {
       List jsonResponse = json.decode(response.body);
@@ -27,7 +27,7 @@ class NewsService {
 
 Future<List<ReportItem>> fetchDailyReports() async {
   final response =
-      await http.get(Uri.parse('http://192.168.219.100:8000/daily_reports'));
+      await http.get(Uri.parse('http://14.43.161.199:8000/daily_reports'));
 
   if (response.statusCode == 200) {
     List<dynamic> body = json.decode(response.body);
